@@ -1,0 +1,51 @@
+{
+  "name": "flowbit-ai-backend",
+  "version": "1.0.0",
+  "description": "Backend API for FlowbitAI Analytics Dashboard",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:push": "prisma db push",
+    "db:seed": "tsx src/scripts/seed.ts",
+    "ingest-data": "tsx src/scripts/ingest-data.ts",
+    "ingest-data-fixed": "tsx src/scripts/ingest-data-fixed.ts",
+    "verify-data": "tsx src/scripts/verify-data.ts",
+    "add-realistic-amounts": "tsx src/scripts/add-realistic-amounts.ts"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.0.0",
+    "morgan": "^1.10.0",
+    "dotenv": "^16.3.1",
+    "@prisma/client": "^5.6.0",
+    "axios": "^1.6.0",
+    "multer": "^1.4.5-lts.1",
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^2.4.3",
+    "express-rate-limit": "^7.1.5",
+    "compression": "^1.7.4",
+    "express-validator": "^7.0.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/cors": "^2.8.17",
+    "@types/morgan": "^1.9.9",
+    "@types/node": "^20.10.0",
+    "@types/multer": "^1.4.11",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/compression": "^1.7.5",
+    "typescript": "^5.3.0",
+    "tsx": "^4.6.0",
+    "prisma": "^5.6.0",
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

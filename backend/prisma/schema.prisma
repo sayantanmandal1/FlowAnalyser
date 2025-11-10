@@ -1,0 +1,178 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Vendor {
+  id        String    @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  address   String?
+  city      String?
+  country   String?
+  category  String?
+  taxId     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  invoices  Invoice[]
+
+  @@map("vendors")
+}
+
+model Customer {
+  id        String    @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  address   String?
+  city      String?
+  country   String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  invoices  Invoice[]
+
+  @@map("customers")
+}
+
+model Invoice {
+  id            String        @id @default(cuid())
+  invoiceNumber String        @unique
+  vendorId      String
+  customerId    String?
+  issueDate     DateTime
+  dueDate       DateTime?
+  paidDate      DateTime?
+  subtotal      Decimal       @db.Decimal(15, 2)
+  taxAmount     Decimal       @default(0) @db.Decimal(15, 2)
+  totalAmount   Decimal       @db.Decimal(15, 2)
+  currency      String        @default("EUR")
+  status        InvoiceStatus @default(PENDING)
+  description   String?
+  category      String?
+  paymentTerms  String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  customer      Customer?     @relation(fields: [customerId], references: [id])
+  vendor        Vendor        @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  lineItems     LineItem[]
+  payments      Payment[]
+
+  @@index([vendorId])
+  @@index([issueDate])
+  @@index([status])
+  @@map("invoices")
+}
+
+model LineItem {
+  id          String   @id @default(cuid())
+  invoiceId   String
+  description String
+  quantity    Decimal  @db.Decimal(10, 2)
+  unitPrice   Decimal  @db.Decimal(15, 2)
+  totalPrice  Decimal  @db.Decimal(15, 2)
+  category    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@map("line_items")
+}
+
+model Payment {
+  id        String        @id @default(cuid())
+  invoiceId String
+  amount    Decimal       @db.Decimal(15, 2)
+  currency  String        @default("EUR")
+  method    PaymentMethod @default(BANK_TRANSFER)
+  reference String?
+  paidDate  DateTime
+  notes     String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  invoice   Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@index([paidDate])
+  @@map("payments")
+}
+
+model Document {
+  id         String       @id @default(cuid())
+  invoiceId  String?
+  fileName   String
+  filePath   String
+  fileSize   Int
+  mimeType   String
+  type       DocumentType @default(INVOICE)
+  uploadedAt DateTime     @default(now())
+
+  @@index([invoiceId])
+  @@map("documents")
+}
+
+model Analytics {
+  id        String   @id @default(cuid())
+  metric    String
+  value     Decimal  @db.Decimal(15, 2)
+  category  String?
+  period    DateTime
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([metric])
+  @@index([period])
+  @@map("analytics")
+}
+
+model User {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  role         UserRole  @default(VIEWER)
+  department   String?
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("users")
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  OVERDUE
+  CANCELLED
+  DRAFT
+}
+
+enum PaymentMethod {
+  BANK_TRANSFER
+  CREDIT_CARD
+  PAYPAL
+  CASH
+  CHECK
+  OTHER
+}
+
+enum DocumentType {
+  INVOICE
+  RECEIPT
+  CONTRACT
+  PO
+  OTHER
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  ACCOUNTANT
+  VIEWER
+}
