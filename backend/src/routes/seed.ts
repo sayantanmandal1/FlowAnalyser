@@ -3,22 +3,75 @@ import prisma from '../lib/prisma';
 
 const router = Router();
 
-// Seed endpoint - call this to populate the database
+// Seed endpoint - call this to populate the database with Analytics_Test_Data.json
 router.post('/initialize', async (req: Request, res: Response) => {
   try {
-    console.log('🌱 Starting database initialization...');
+    console.log('🌱 Starting database initialization with Analytics_Test_Data.json...');
 
     // Check if data already exists
     const existingInvoices = await prisma.invoice.count();
     if (existingInvoices > 0) {
       return res.json({
         message: 'Database already initialized',
-        invoiceCount: existingInvoices
+        invoiceCount: existingInvoices,
+        note: 'To reinitialize, clear the database first'
       });
     }
 
-    // Sample vendors
-    const vendors = [
+    // Import and run the actual data ingestion
+    const { ingestAnalyticsData } = await import('../scripts/ingest-data-fixed');
+    const dataPath = './data/Analytics_Test_Data.json';
+    
+    await ingestAnalyticsData(dataPath);
+    
+    // Get final counts
+    const counts = {
+      vendors: await prisma.vendor.count(),
+      customers: await prisma.customer.count(),
+      invoices: await prisma.invoice.count(),
+      payments: await prisma.payment.count(),
+      documents: await prisma.document.count()
+    };
+
+    res.json({
+      message: 'Database initialized successfully with Analytics_Test_Data.json!',
+      counts
+    });
+  } catch (error: any) {
+    console.error('❌ Error initializing database:', error);
+    
+    // If import fails, fall back to sample data
+    console.log('⚠️ Falling back to sample data generation...');
+    
+    try {
+      await generateSampleData();
+      
+      const counts = {
+        vendors: await prisma.vendor.count(),
+        customers: await prisma.customer.count(),
+        invoices: await prisma.invoice.count(),
+        payments: await prisma.payment.count(),
+        documents: await prisma.document.count()
+      };
+
+      res.json({
+        message: 'Database initialized with sample data (Analytics_Test_Data.json not available)',
+        counts
+      });
+    } catch (fallbackError: any) {
+      res.status(500).json({ 
+        error: 'Failed to initialize database',
+        details: fallbackError.message 
+      });
+    }
+  }
+});
+
+// Helper function to generate sample data as fallback
+async function generateSampleData() {
+
+  // Sample vendors
+  const vendors = [
       { name: "TechCorp Solutions", email: "contact@techcorp.com", category: "Technology", country: "Germany", city: "Berlin" },
       { name: "Office Supplies Plus", email: "orders@officesupplies.com", category: "Office Supplies", country: "Netherlands", city: "Amsterdam" },
       { name: "Marketing Pro", email: "hello@marketingpro.com", category: "Marketing", country: "France", city: "Paris" },
@@ -141,30 +194,8 @@ router.post('/initialize', async (req: Request, res: Response) => {
       });
     }
 
-    console.log('✅ Created documents');
-
-    // Get final counts
-    const counts = {
-      vendors: await prisma.vendor.count(),
-      customers: await prisma.customer.count(),
-      invoices: await prisma.invoice.count(),
-      payments: await prisma.payment.count(),
-      documents: await prisma.document.count()
-    };
-
-    res.json({
-      message: 'Database initialized successfully!',
-      counts
-    });
-
-  } catch (error: any) {
-    console.error('❌ Error initializing database:', error);
-    res.status(500).json({ 
-      error: 'Failed to initialize database',
-      details: error.message 
-    });
-  }
-});
+  console.log('✅ Created documents');
+}
 
 // Check database status
 router.get('/status', async (req: Request, res: Response) => {
