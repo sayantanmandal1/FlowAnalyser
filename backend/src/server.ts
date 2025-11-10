@@ -30,7 +30,23 @@ const limiter = rateLimit({
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Hardcoded allowed origins
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'https://flowanalyser2.onrender.com'
+    ];
+    
+    // Allow any vercel.app domain
+    if (origin.endsWith('.vercel.app') || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, true); // Allow all for now
+    }
+  },
   credentials: true
 }));
 app.use(compression());

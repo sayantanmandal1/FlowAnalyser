@@ -33,8 +33,8 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS configuration
-allowed_origins = os.getenv("ALLOWED_ORIGINS", "*").split(",")
+# CORS configuration - Hardcoded allowed origins
+allowed_origins = ["*"]  # Allow all origins (or specify exact Vercel URL when you have it)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,

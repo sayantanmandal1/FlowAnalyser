@@ -12,8 +12,8 @@ router.post('/chat-with-data', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Query is required' });
     }
 
-    // Get Vanna AI server URL from environment
-    const vannaApiUrl = process.env.VANNA_API_BASE_URL || 'http://localhost:8000';
+    // Hardcoded Vanna AI server URL
+    const vannaApiUrl = 'https://flowanalyser.onrender.com';
 
     // Forward the request to Vanna AI server
     const vannaResponse = await axios.post(`${vannaApiUrl}/chat`, {

@@ -1,5 +1,5 @@
-// Use environment variable or default to localhost for development
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
+// Hardcoded production API URL
+export const API_BASE_URL = 'https://flowanalyser2.onrender.com/api';
 
 // Generic API request function
 async function apiRequest<T>(
