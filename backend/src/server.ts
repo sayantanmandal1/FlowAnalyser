@@ -13,6 +13,7 @@ import vendorsRoutes from './routes/vendors';
 import chatRoutes from './routes/chat';
 import documentsRoutes from './routes/documents';
 import usersRoutes from './routes/users';
+import seedRoutes from './routes/seed';
 
 // Load environment variables
 config();
@@ -71,6 +72,7 @@ app.use('/api/vendors', vendorsRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/documents', documentsRoutes);
 app.use('/api/users', usersRoutes);
+app.use('/api/seed', seedRoutes);
 
 // Default route
 app.get('/', (req: Request, res: Response) => {
