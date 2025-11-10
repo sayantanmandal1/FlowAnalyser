@@ -134,9 +134,18 @@ class DatabaseSchema:
         CRITICAL: Always use double quotes around camelCase column names in SQL queries!
         """
 
+# Global connection pool
+_db_connection = None
+
 def get_db_connection():
-    """Create database connection"""
+    """Get or create a single reusable database connection"""
+    global _db_connection
+    
     try:
+        # Reuse existing connection if available and not closed
+        if _db_connection and not _db_connection.closed:
+            return _db_connection
+        
         if not DATABASE_URL:
             raise ValueError("DATABASE_URL not configured")
         
@@ -147,18 +156,19 @@ def get_db_connection():
         if '?' in db_url:
             db_url = db_url.split('?')[0]
         
-        conn = psycopg2.connect(
+        # Create new connection
+        _db_connection = psycopg2.connect(
             db_url,
             cursor_factory=RealDictCursor
         )
-        return conn
+        logger.info("✅ Database connection established")
+        return _db_connection
     except Exception as e:
         logger.error(f"Database connection failed: {e}")
         raise HTTPException(status_code=500, detail="Database connection failed")
 
 def execute_sql_query(sql: str) -> List[Dict[str, Any]]:
     """Execute SQL query and return results"""
-    conn = None
     cursor = None
     try:
         logger.info(f"Executing SQL: {sql}")
@@ -188,8 +198,7 @@ def execute_sql_query(sql: str) -> List[Dict[str, Any]]:
     finally:
         if cursor:
             cursor.close()
-        if conn:
-            conn.close()
+        # Don't close connection - reuse it
 
 def generate_sql_with_groq(question: str) -> str:
     """Generate SQL using Groq LLM"""
