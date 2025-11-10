@@ -71,7 +71,9 @@ class DatabaseSchema:
     @staticmethod
     def get_schema_info() -> str:
         return """
-        Database Schema for FlowbitAI Analytics:
+        Database Schema for FlowbitAI Analytics (PostgreSQL with Prisma - use camelCase column names):
+        
+        IMPORTANT: All column names use camelCase (e.g., vendorId, NOT vendor_id)
         
         1. vendors table:
         - id: string (primary key)
@@ -79,49 +81,57 @@ class DatabaseSchema:
         - email: string (optional)
         - category: string (vendor category like 'Technology', 'Marketing', etc.)
         - city: string, country: string
+        - createdAt: timestamp, updatedAt: timestamp
         
         2. customers table:
         - id: string (primary key) 
         - name: string (customer name)
         - email: string (optional)
         - city: string, country: string
+        - createdAt: timestamp, updatedAt: timestamp
         
         3. invoices table:
         - id: string (primary key)
-        - invoice_number: string (unique invoice number)
-        - vendor_id: string (foreign key to vendors)
-        - customer_id: string (foreign key to customers, optional)
-        - issue_date: timestamp (when invoice was issued)
-        - due_date: timestamp (when payment is due)
-        - paid_date: timestamp (when invoice was paid, null if unpaid)
+        - invoiceNumber: string (unique invoice number) - USE camelCase!
+        - vendorId: string (foreign key to vendors) - USE camelCase!
+        - customerId: string (foreign key to customers, optional) - USE camelCase!
+        - issueDate: timestamp (when invoice was issued) - USE camelCase!
+        - dueDate: timestamp (when payment is due) - USE camelCase!
+        - paidDate: timestamp (when invoice was paid, null if unpaid) - USE camelCase!
         - subtotal: decimal (invoice subtotal)
-        - tax_amount: decimal (tax amount)
-        - total_amount: decimal (total invoice amount)
+        - taxAmount: decimal (tax amount) - USE camelCase!
+        - totalAmount: decimal (total invoice amount) - USE camelCase!
         - currency: string (default EUR)
         - status: enum (PENDING, PAID, OVERDUE, CANCELLED, DRAFT)
         - category: string (invoice category)
+        - createdAt: timestamp, updatedAt: timestamp
         
         4. line_items table:
         - id: string (primary key)
-        - invoice_id: string (foreign key to invoices)
+        - invoiceId: string (foreign key to invoices) - USE camelCase!
         - description: string (item description)
         - quantity: decimal
-        - unit_price: decimal
-        - total_price: decimal
+        - unitPrice: decimal - USE camelCase!
+        - totalPrice: decimal - USE camelCase!
         - category: string
+        - createdAt: timestamp, updatedAt: timestamp
         
         5. payments table:
         - id: string (primary key)
-        - invoice_id: string (foreign key to invoices)
+        - invoiceId: string (foreign key to invoices) - USE camelCase!
         - amount: decimal (payment amount)
+        - currency: string (default EUR)
         - method: enum (BANK_TRANSFER, CREDIT_CARD, PAYPAL, CASH, CHECK, OTHER)
-        - paid_date: timestamp
+        - paidDate: timestamp - USE camelCase!
+        - createdAt: timestamp, updatedAt: timestamp
         
-        Common queries:
-        - Total spend: SUM(total_amount) FROM invoices WHERE status = 'PAID'
-        - Top vendors: JOIN invoices with vendors, GROUP BY vendor, ORDER BY total spend
-        - Overdue invoices: WHERE status = 'OVERDUE' OR (status = 'PENDING' AND due_date < CURRENT_DATE)
-        - Monthly trends: GROUP BY EXTRACT(YEAR FROM issue_date), EXTRACT(MONTH FROM issue_date)
+        Common query examples (ALWAYS use camelCase):
+        - Total spend: SELECT SUM("totalAmount") FROM invoices WHERE status = 'PAID'
+        - Top vendors: SELECT v.name, SUM(i."totalAmount") as total FROM vendors v JOIN invoices i ON v.id = i."vendorId" WHERE i.status = 'PAID' GROUP BY v.id, v.name ORDER BY total DESC LIMIT 10
+        - Overdue invoices: SELECT * FROM invoices WHERE status = 'OVERDUE' OR (status = 'PENDING' AND "dueDate" < CURRENT_DATE)
+        - Monthly trends: SELECT EXTRACT(YEAR FROM "issueDate") as year, EXTRACT(MONTH FROM "issueDate") as month, COUNT(*) FROM invoices GROUP BY year, month
+        
+        CRITICAL: Always use double quotes around camelCase column names in SQL queries!
         """
 
 def get_db_connection():
