@@ -51,10 +51,7 @@ router.get('/', async (req: Request, res: Response) => {
     }
 
     if (type && type !== 'all') {
-      where.fileType = {
-        contains: type as string,
-        mode: 'insensitive'
-      };
+      where.type = type as string;
     }
 
     const [documents, total] = await Promise.all([
@@ -96,9 +93,8 @@ router.post('/upload', upload.single('document'), async (req: Request, res: Resp
         fileName: req.file.originalname,
         filePath: req.file.path,
         fileSize: req.file.size,
-        fileType: path.extname(req.file.originalname).toLowerCase(),
-        uploadedAt: new Date(),
-        processingStatus: 'UPLOADED'
+        mimeType: req.file.mimetype,
+        type: 'OTHER'
       }
     });
 
