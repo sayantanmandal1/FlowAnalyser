@@ -6,9 +6,6 @@ const router = Router();
 // Get overview statistics
 router.get('/stats', async (req: Request, res: Response) => {
   try {
-    // Test database connection first
-    await prisma.$connect();
-    
     const [
       totalSpend,
       totalInvoices,
@@ -61,6 +58,20 @@ router.get('/stats', async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Error fetching stats:', error);
+    
+    // If database connection fails, return empty data instead of error
+    // This allows the frontend to load even if DB is having issues
+    if (error.message?.includes('too many connections') || error.code === 'P1001') {
+      console.warn('Database connection limit reached, returning empty data');
+      return res.json({
+        totalSpend: 0,
+        totalInvoices: 0,
+        documentsUploaded: 0,
+        averageInvoiceValue: 0,
+        _warning: 'Database temporarily unavailable'
+      });
+    }
+    
     res.status(500).json({ 
       error: 'Failed to fetch statistics',
       details: error.message,
