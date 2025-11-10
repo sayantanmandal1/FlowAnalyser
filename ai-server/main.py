@@ -133,6 +133,10 @@ def get_db_connection():
         # Convert from postgres:// to postgresql:// if needed for psycopg2
         db_url = DATABASE_URL.replace("postgresql+psycopg://", "postgresql://")
         
+        # Remove connection pooling parameters that psycopg2 doesn't support
+        if '?' in db_url:
+            db_url = db_url.split('?')[0]
+        
         conn = psycopg2.connect(
             db_url,
             cursor_factory=RealDictCursor
