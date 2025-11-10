@@ -144,7 +144,10 @@ def get_db_connection():
 
 def execute_sql_query(sql: str) -> List[Dict[str, Any]]:
     """Execute SQL query and return results"""
+    conn = None
+    cursor = None
     try:
+        logger.info(f"Executing SQL: {sql}")
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -155,18 +158,23 @@ def execute_sql_query(sql: str) -> List[Dict[str, Any]]:
         if sql.strip().upper().startswith('SELECT'):
             results = cursor.fetchall()
             # Convert to list of dictionaries
-            return [dict(row) for row in results]
+            data = [dict(row) for row in results]
+            logger.info(f"Query returned {len(data)} rows")
+            return data
         else:
             conn.commit()
             return [{"message": "Query executed successfully"}]
             
+    except psycopg2.Error as e:
+        logger.error(f"PostgreSQL error: {e.pgcode} - {e.pgerror}")
+        raise Exception(f"Database error: {e.pgerror or str(e)}")
     except Exception as e:
-        logger.error(f"SQL execution error: {e}")
-        raise Exception(f"SQL execution failed: {str(e)}")
+        logger.error(f"SQL execution error: {type(e).__name__} - {str(e)}")
+        raise Exception(f"Query failed: {str(e)}")
     finally:
-        if 'cursor' in locals():
+        if cursor:
             cursor.close()
-        if 'conn' in locals():
+        if conn:
             conn.close()
 
 def generate_sql_with_groq(question: str) -> str:
