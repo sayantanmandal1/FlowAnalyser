@@ -1,5 +1,12 @@
 # Backend Dockerfile for Render Deployment
-FROM node:18-alpine AS base
+# Use Debian-based image instead of Alpine for better OpenSSL compatibility
+FROM node:18-slim AS base
+
+# Install OpenSSL and other dependencies
+RUN apt-get update && apt-get install -y \
+    openssl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install dependencies only when needed
 FROM base AS deps
@@ -9,7 +16,7 @@ WORKDIR /app
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Install dependencies (use npm install instead of npm ci)
+# Install dependencies
 RUN npm install --production && \
     npm cache clean --force
 
@@ -39,8 +46,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 # Create non-root user
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 expressjs
+RUN groupadd --system --gid 1001 nodejs && \
+    useradd --system --uid 1001 --gid nodejs expressjs
 
 # Copy necessary files
 COPY --from=deps --chown=expressjs:nodejs /app/node_modules ./node_modules
