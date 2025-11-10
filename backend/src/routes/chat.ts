@@ -6,10 +6,11 @@ const router = Router();
 // Chat with data endpoint
 router.post('/chat-with-data', async (req: Request, res: Response) => {
   try {
-    const { query, context } = req.body;
+    const { question, query, context } = req.body;
+    const userQuestion = question || query;
 
-    if (!query) {
-      return res.status(400).json({ error: 'Query is required' });
+    if (!userQuestion) {
+      return res.status(400).json({ error: 'Question is required' });
     }
 
     // Hardcoded Vanna AI server URL
@@ -17,7 +18,7 @@ router.post('/chat-with-data', async (req: Request, res: Response) => {
 
     // Forward the request to Vanna AI server
     const vannaResponse = await axios.post(`${vannaApiUrl}/chat`, {
-      question: query,
+      question: userQuestion,
       context: context || {}
     }, {
       timeout: 30000, // 30 second timeout

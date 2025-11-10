@@ -20,14 +20,14 @@ const upload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|pdf|doc|docx|xls|xlsx/;
+    const allowedTypes = /jpeg|jpg|png|gif|pdf|doc|docx|xls|xlsx|json/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
+    const mimetype = allowedTypes.test(file.mimetype) || file.mimetype === 'application/json';
 
     if (mimetype && extname) {
       return cb(null, true);
     } else {
-      cb(new Error('Only images and documents are allowed'));
+      cb(new Error('Only images, documents, and JSON files are allowed'));
     }
   }
 });
