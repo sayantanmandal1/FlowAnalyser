@@ -15,6 +15,9 @@ import documentsRoutes from './routes/documents';
 import usersRoutes from './routes/users';
 import seedRoutes from './routes/seed';
 
+// Import middleware
+import { dbErrorHandler } from './middleware/dbErrorHandler';
+
 // Load environment variables
 config();
 
@@ -124,6 +127,9 @@ app.use((req: Request, res: Response) => {
     message: `Route ${req.originalUrl} not found`
   });
 });
+
+// Database error handler (must be before general error handler)
+app.use(dbErrorHandler);
 
 // Error handler
 app.use((error: any, req: Request, res: Response, next: NextFunction) => {

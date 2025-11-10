@@ -3,56 +3,43 @@ import { PrismaClient } from '@prisma/client';
 // Check if DATABASE_URL is configured
 if (!process.env.DATABASE_URL) {
   console.error('❌ DATABASE_URL is not configured!');
-  console.error('Please set DATABASE_URL environment variable in Render dashboard');
+  throw new Error('DATABASE_URL environment variable is required');
 }
 
-// Declare global type for Prisma singleton
-declare global {
-  var __prisma: PrismaClient | undefined;
-}
-
-// Add connection pooling to DATABASE_URL if not present
+// Add connection pooling to DATABASE_URL
 const getDatabaseUrl = () => {
-  const url = process.env.DATABASE_URL;
-  if (!url) return url;
+  const url = process.env.DATABASE_URL!;
   
-  // Add connection pooling parameters if not present
+  // Add connection pooling parameters
   if (!url.includes('connection_limit')) {
     const separator = url.includes('?') ? '&' : '?';
-    return `${url}${separator}connection_limit=5&pool_timeout=10`;
+    return `${url}${separator}connection_limit=3&pool_timeout=20&connect_timeout=10`;
   }
   return url;
 };
 
-// Singleton Prisma Client to prevent too many connections
-let prisma: PrismaClient;
-
-if (process.env.NODE_ENV === 'production') {
-  prisma = new PrismaClient({
-    log: ['error', 'warn'],
-    datasources: {
-      db: {
-        url: getDatabaseUrl()
-      }
+// Create a single Prisma instance
+const prisma = new PrismaClient({
+  log: ['error'],
+  datasources: {
+    db: {
+      url: getDatabaseUrl()
     }
-  });
-} else {
-  if (!global.__prisma) {
-    global.__prisma = new PrismaClient({
-      log: ['query', 'error', 'warn'],
-      datasources: {
-        db: {
-          url: getDatabaseUrl()
-        }
-      }
-    });
   }
-  prisma = global.__prisma;
-}
-
-// Graceful shutdown
-process.on('beforeExit', async () => {
-  await prisma.$disconnect();
 });
+
+// Connect once at startup
+prisma.$connect()
+  .then(() => console.log('✅ Database connected'))
+  .catch((e) => console.error('❌ Database connection failed:', e.message));
+
+// Disconnect on shutdown
+const shutdown = async () => {
+  await prisma.$disconnect();
+  process.exit(0);
+};
+
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
 
 export default prisma;
