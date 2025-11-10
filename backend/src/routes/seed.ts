@@ -3,10 +3,10 @@ import prisma from '../lib/prisma';
 
 const router = Router();
 
-// Seed endpoint - call this to populate the database with Analytics_Test_Data.json
+// Seed endpoint - call this to populate the database
 router.post('/initialize', async (req: Request, res: Response) => {
   try {
-    console.log('🌱 Starting database initialization with Analytics_Test_Data.json...');
+    console.log('🌱 Starting database initialization...');
 
     // Check if data already exists
     const existingInvoices = await prisma.invoice.count();
@@ -14,15 +14,12 @@ router.post('/initialize', async (req: Request, res: Response) => {
       return res.json({
         message: 'Database already initialized',
         invoiceCount: existingInvoices,
-        note: 'To reinitialize, clear the database first'
+        note: 'Database already has data'
       });
     }
 
-    // Import and run the actual data ingestion
-    const { ingestAnalyticsData } = await import('../scripts/ingest-data-fixed');
-    const dataPath = './data/Analytics_Test_Data.json';
-    
-    await ingestAnalyticsData(dataPath);
+    // Generate sample data
+    await generateSampleData();
     
     // Get final counts
     const counts = {
@@ -34,36 +31,15 @@ router.post('/initialize', async (req: Request, res: Response) => {
     };
 
     res.json({
-      message: 'Database initialized successfully with Analytics_Test_Data.json!',
+      message: 'Database initialized successfully!',
       counts
     });
   } catch (error: any) {
     console.error('❌ Error initializing database:', error);
-    
-    // If import fails, fall back to sample data
-    console.log('⚠️ Falling back to sample data generation...');
-    
-    try {
-      await generateSampleData();
-      
-      const counts = {
-        vendors: await prisma.vendor.count(),
-        customers: await prisma.customer.count(),
-        invoices: await prisma.invoice.count(),
-        payments: await prisma.payment.count(),
-        documents: await prisma.document.count()
-      };
-
-      res.json({
-        message: 'Database initialized with sample data (Analytics_Test_Data.json not available)',
-        counts
-      });
-    } catch (fallbackError: any) {
-      res.status(500).json({ 
-        error: 'Failed to initialize database',
-        details: fallbackError.message 
-      });
-    }
+    res.status(500).json({ 
+      error: 'Failed to initialize database',
+      details: error.message 
+    });
   }
 });
 
