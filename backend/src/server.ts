@@ -65,6 +65,29 @@ app.get('/health', (req: Request, res: Response) => {
   });
 });
 
+// Database health check
+app.get('/db-health', async (req: Request, res: Response) => {
+  try {
+    const { PrismaClient } = await import('@prisma/client');
+    const testPrisma = new PrismaClient();
+    await testPrisma.$connect();
+    const result = await testPrisma.$queryRaw`SELECT 1 as test`;
+    await testPrisma.$disconnect();
+    res.json({ 
+      status: 'connected',
+      result,
+      databaseUrl: process.env.DATABASE_URL ? 'configured' : 'missing'
+    });
+  } catch (error: any) {
+    res.status(500).json({ 
+      status: 'error',
+      error: error.message,
+      code: error.code,
+      databaseUrl: process.env.DATABASE_URL ? 'configured' : 'missing'
+    });
+  }
+});
+
 // Routes
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/invoices', invoicesRoutes);

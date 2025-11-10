@@ -6,6 +6,9 @@ const router = Router();
 // Get overview statistics
 router.get('/stats', async (req: Request, res: Response) => {
   try {
+    // Test database connection first
+    await prisma.$connect();
+    
     const [
       totalSpend,
       totalInvoices,
@@ -56,9 +59,13 @@ router.get('/stats', async (req: Request, res: Response) => {
       documentsUploaded: totalDocuments,
       averageInvoiceValue: Number(avgInvoiceValue._avg.totalAmount) || 0
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching stats:', error);
-    res.status(500).json({ error: 'Failed to fetch statistics' });
+    res.status(500).json({ 
+      error: 'Failed to fetch statistics',
+      details: error.message,
+      code: error.code 
+    });
   }
 });
 
