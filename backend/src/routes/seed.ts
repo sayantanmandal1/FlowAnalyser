@@ -11,6 +11,20 @@ router.post('/initialize', async (req: Request, res: Response) => {
     // Reconnect to clear any stuck connections
     await reconnect();
 
+    // First, push the schema to create tables
+    console.log('📋 Creating database tables...');
+    try {
+      // Execute prisma db push programmatically
+      const { execSync } = require('child_process');
+      execSync('npx prisma db push --skip-generate', { 
+        stdio: 'inherit',
+        cwd: process.cwd()
+      });
+      console.log('✅ Tables created');
+    } catch (pushError) {
+      console.log('⚠️ Tables might already exist, continuing...');
+    }
+
     // Check if data already exists
     const existingInvoices = await prisma.invoice.count();
     if (existingInvoices > 0) {

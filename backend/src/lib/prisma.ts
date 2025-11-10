@@ -26,12 +26,6 @@ const prisma = new PrismaClient({
     db: {
       url: getDatabaseUrl()
     }
-  },
-  // Force single connection
-  __internal: {
-    engine: {
-      cwd: process.cwd(),
-    }
   }
 });
 
