@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import prisma from '../lib/prisma';
+import prisma, { ensureConnected, reconnect } from '../lib/prisma';
 
 const router = Router();
 
@@ -7,6 +7,9 @@ const router = Router();
 router.post('/initialize', async (req: Request, res: Response) => {
   try {
     console.log('🌱 Starting database initialization...');
+    
+    // Reconnect to clear any stuck connections
+    await reconnect();
 
     // Check if data already exists
     const existingInvoices = await prisma.invoice.count();

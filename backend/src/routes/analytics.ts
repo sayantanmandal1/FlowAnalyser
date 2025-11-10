@@ -1,11 +1,13 @@
 import { Router, Request, Response } from 'express';
-import prisma from '../lib/prisma';
+import prisma, { ensureConnected } from '../lib/prisma';
 
 const router = Router();
 
 // Get overview statistics
 router.get('/stats', async (req: Request, res: Response) => {
   try {
+    await ensureConnected();
+    
     const [
       totalSpend,
       totalInvoices,

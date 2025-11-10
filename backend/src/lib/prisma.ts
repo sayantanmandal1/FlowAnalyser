@@ -6,40 +6,70 @@ if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL environment variable is required');
 }
 
-// Add connection pooling to DATABASE_URL
+// Add connection pooling to DATABASE_URL with very strict limits
 const getDatabaseUrl = () => {
   const url = process.env.DATABASE_URL!;
   
-  // Add connection pooling parameters
+  // Add aggressive connection pooling parameters
   if (!url.includes('connection_limit')) {
     const separator = url.includes('?') ? '&' : '?';
-    return `${url}${separator}connection_limit=3&pool_timeout=20&connect_timeout=10`;
+    // Use only 1 connection to avoid exhausting the pool
+    return `${url}${separator}connection_limit=1&pool_timeout=0`;
   }
   return url;
 };
 
-// Create a single Prisma instance
+// Create a single Prisma instance with minimal connections
 const prisma = new PrismaClient({
   log: ['error'],
   datasources: {
     db: {
       url: getDatabaseUrl()
     }
+  },
+  // Force single connection
+  __internal: {
+    engine: {
+      cwd: process.cwd(),
+    }
   }
 });
 
-// Connect once at startup
-prisma.$connect()
-  .then(() => console.log('✅ Database connected'))
-  .catch((e) => console.error('❌ Database connection failed:', e.message));
+// Don't connect at startup - connect on demand
+let isConnected = false;
+
+// Helper to ensure connection
+export const ensureConnected = async () => {
+  if (!isConnected) {
+    await prisma.$connect();
+    isConnected = true;
+    console.log('✅ Database connected');
+  }
+};
+
+// Disconnect and reconnect to clear any stuck connections
+export const reconnect = async () => {
+  try {
+    await prisma.$disconnect();
+    isConnected = false;
+    await ensureConnected();
+  } catch (e) {
+    console.error('Reconnect failed:', e);
+  }
+};
 
 // Disconnect on shutdown
 const shutdown = async () => {
-  await prisma.$disconnect();
+  try {
+    await prisma.$disconnect();
+  } catch (e) {
+    console.error('Shutdown error:', e);
+  }
   process.exit(0);
 };
 
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
+process.on('beforeExit', shutdown);
 
 export default prisma;
